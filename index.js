@@ -157,6 +157,27 @@ app.get('/api/livros', async (req, res) => {
 });
 
 /**
+ * Rota GET por ID
+*/
+
+app.get('/api/livros/:id', async (req, res) => {
+    const { id } = req.params;
+    
+    const livro = await db.get(`
+        SELECT livros.*, autores.nome as autor_nome 
+        FROM livros 
+        JOIN autores ON livros.autor_id = autores.id 
+        WHERE livros.id = ?
+    `, [id]);
+
+    if (!livro) {
+        return res.status(404).json({ erro: 'Livro não encontrado' });
+    }
+
+    res.json(livro);
+});
+
+/**
  * LISTAR AUTORES
 */
 
