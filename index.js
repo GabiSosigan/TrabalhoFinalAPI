@@ -1,3 +1,4 @@
+const path = require('path');
 const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
 const { open } = require('sqlite');
@@ -5,7 +6,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const {z} = require('zod');
 
-const JWT_SECRET = 'grace_rocky_save_stars';
+const JWT_SECRET = 'nevergonnagiveyouup';
 
 const livroSchema = z.object({
     nome: z.string().min(2, "Nome deve ter no mínimo 2 caracteres"),
@@ -33,7 +34,7 @@ function verificarToken(req, res, next) {
 
 async function configurarBanco() {
     db = await open({
-        filename: './banco.sqlite',
+        filename: path.join(__dirname, 'database.sqlite'), 
         driver: sqlite3.Database
     });
 
@@ -107,6 +108,8 @@ async function configurarBanco() {
         console.log('Banco de dados já possui registros.');
     }
 }
+
+configurarBanco();
 
 /**
  * Rota GET
@@ -256,6 +259,7 @@ app.put('/api/livros/:id', verificarToken, async (req, res) => {
 
         res.json({ mensagem: 'Livro atualizado com sucesso!' });
     } catch (erro) {
+        console.error("ERRO DETALHADO:", erro);
         if (erro instanceof z.ZodError) return res.status(400).json({ erro: 'Validação falhou', detalhes: erro.errors });
         res.status(500).json({ erro: 'Erro interno' });
     }
@@ -271,6 +275,10 @@ app.delete('/api/livros/:id', verificarToken, async (req, res) => {
 
     if (result.changes === 0) return res.status(404).json({ erro: 'Livro não encontrado' });
     res.json({ mensagem: 'Livro removido com sucesso!' });
+});
+
+app.get('/', (req, res) => {
+    res.send('<h1>API Rodando!</h1>');
 });
 
 const PORT = process.env.PORT || 3000;
