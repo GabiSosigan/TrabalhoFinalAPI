@@ -1,7 +1,7 @@
 # API de Livraria
 
 Aluna: Gabriela Sosigan Pavaneli Silva
-Este projeto é uma API para gerenciar uma livraria, permitindo o cadastro de livros e autores, além de um sistema de login para segurança.
+* Este projeto é uma API para gerenciar uma livraria, permitindo o cadastro de livros e autores, além de um sistema de login para segurança.
 
 ## Como instalar e rodar o projeto
 
@@ -55,3 +55,31 @@ Siga os passos abaixo para configurar o projeto na sua máquina:
 ## Deploy
 
 O projeto está configurado para rodar na plataforma Render, utilizando caminhos absolutos para o banco de dados e variáveis de ambiente para a porta do servidor.
+
+##Prints
+* Rota POST Fazer Login
+<img width="1436" height="323" alt="Captura de tela 2026-04-14 235321" src="https://github.com/user-attachments/assets/f7ba7a41-6c60-4548-b335-32ad28eb590c" />
+<img width="1438" height="331" alt="Captura de tela 2026-04-14 235332" src="https://github.com/user-attachments/assets/6b6f78a9-011f-40f9-aed8-c7b0a51ba36b" />
+
+* Rota POST Criar Livro
+<img width="1438" height="710" alt="Captura de tela 2026-04-14 231759" src="https://github.com/user-attachments/assets/171ea129-5014-4029-a7ff-289de279f0c4" />
+
+* Rota GET Listar Livros
+<img width="1434" height="1024" alt="Captura de tela 2026-04-14 232257" src="https://github.com/user-attachments/assets/51e5ff0c-5779-4d56-8459-9b52527b3496" />
+
+* Rota PUT Atualizar Livro
+<img width="1437" height="603" alt="Captura de tela 2026-04-14 232623" src="https://github.com/user-attachments/assets/190eeb52-3c6b-4034-b47c-1ce4c77c5548" />
+
+* Rota POST Adicionar Autor
+<img width="1437" height="458" alt="Captura de tela 2026-04-14 233604" src="https://github.com/user-attachments/assets/77db3df3-1261-4d7c-8add-c684afbec732" />
+
+* Rota DELETE Deletar Livro
+<img width="1438" height="413" alt="Captura de tela 2026-04-14 233900" src="https://github.com/user-attachments/assets/3ed41cce-f6f8-4e96-a1df-d0156b90eaca" />
+<img width="1440" height="409" alt="Captura de tela 2026-04-14 233917" src="https://github.com/user-attachments/assets/7e4e4340-3873-4295-a664-86c73fe29065" />
+
+* Rota GET Livro por ID
+<img width="1439" height="473" alt="Captura de tela 2026-04-14 234521" src="https://github.com/user-attachments/assets/3fcfa0b4-f363-43d1-b209-0e75d3207b2e" />
+
+* Rota GET Autores
+<img width="1436" height="850" alt="Captura de tela 2026-04-15 010610" src="https://github.com/user-attachments/assets/c1539d32-05ea-4700-9aca-c3dd0c212a43" />
+
