@@ -157,6 +157,27 @@ app.get('/api/livros', async (req, res) => {
 });
 
 /**
+ * LISTAR AUTORES
+*/
+
+app.get('/api/autores', async (req, res) => {
+    const autores = await db.all('SELECT * FROM autores');
+    res.json(autores);
+});
+
+/**
+ * CRIAR NOVO AUTOR (Admin)
+*/
+
+app.post('/api/autores', verificarToken, async (req, res) => {
+    const { nome } = req.body;
+    if (!nome) return res.status(400).json({ erro: "Nome do autor é obrigatório" });
+    
+    const result = await db.run('INSERT INTO autores (nome) VALUES (?)', [nome]);
+    res.status(201).json({ id: result.lastID, nome });
+});
+
+/**
  * LOGIN
 */
 
