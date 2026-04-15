@@ -1,11 +1,35 @@
 const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
 const { open } = require('sqlite');
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt');
+const {z} = require('zod');
+
+const JWT_SECRET = 'grace_rocky_save_stars';
+
+const livroSchema = z.object({
+    nome: z.string().min(2, "Nome deve ter no mínimo 2 caracteres"),
+    preco: z.number().positive("O preço deve ser maior que zero"),
+    genero: z.string().min(2, "Gênero é obrigatório"),
+    paginas: z.number().int().positive("Páginas devem ser um número inteiro positivo"),
+    autor_id: z.number().int().positive("ID do autor inválido")
+});
 
 const app = express();
 app.use(express.json());
 
 let db;
+
+function verificarToken(req, res, next) {
+    const token = req.headers['authorization'];
+    if (!token) return res.status(401).json({ erro: 'Token não fornecido' });
+
+    jwt.verify(token.replace('Bearer ', ''), JWT_SECRET, (err, decoded) => {
+        if (err) return res.status(401).json({ erro: 'Token inválido' });
+        req.usuarioId = decoded.id;
+        next();
+    });
+}
 
 async function configurarBanco() {
     db = await open({
@@ -14,6 +38,12 @@ async function configurarBanco() {
     });
 
     await db.exec(`
+        CREATE TABLE IF NOT EXISTS usuarios (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT NOT NULL,
+            senha TEXT NOT NULL
+        );
+        
         CREATE TABLE IF NOT EXISTS autores (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             nome TEXT NOT NULL
@@ -34,6 +64,9 @@ async function configurarBanco() {
     
     if (qtdeLivros.count === 0) {
         console.log('Banco vazio. Inserindo registros iniciais...');
+
+        const senhaHash = await bcrypt.hash('senha123', 10);
+        await db.run('INSERT INTO usuarios (username, senha) VALUES (?, ?)', ['admin', senhaHash]);
         
         const autores = ['Antoine de Saint-Exupéry', 'Stephen King', 'J.R.R. Tolkien', 'George Orwell', 'Machado de Assis'];
         for (const autor of autores) {
@@ -76,7 +109,7 @@ async function configurarBanco() {
 }
 
 /**
- * Endpoint GET que lista os livros (Paginação, filtros e JOIN)
+ * Rota GET
 */
 
 app.get('/api/livros', async (req, res) => {
@@ -121,6 +154,81 @@ app.get('/api/livros', async (req, res) => {
     } catch (erro) {
         res.status(500).json({ erro: 'Erro interno no servidor' });
     }
+});
+
+/**
+ * LOGIN
+*/
+
+app.post('/api/login', async (req, res) => {
+    const { username, senha } = req.body;
+    const usuario = await db.get('SELECT * FROM usuarios WHERE username = ?', [username]);
+
+    if (!usuario || !(await bcrypt.compare(senha, usuario.senha))) {
+        return res.status(401).json({ erro: 'Credenciais inválidas!' });
+    }
+
+    const token = jwt.sign({ id: usuario.id }, JWT_SECRET, { expiresIn: '1h' });
+    res.json({ token });
+});
+
+/**
+ * Rota POST
+*/
+
+app.post('/api/livros', verificarToken, async (req, res) => {
+    try {
+        const dadosValidados = livroSchema.parse(req.body);
+        
+        const autorExiste = await db.get('SELECT id FROM autores WHERE id = ?', [dadosValidados.autor_id]);
+        if (!autorExiste) return res.status(404).json({ erro: 'Autor não encontrado' });
+
+        const result = await db.run(
+            'INSERT INTO livros (nome, preco, genero, paginas, autor_id) VALUES (?, ?, ?, ?, ?)',
+            [dadosValidados.nome, dadosValidados.preco, dadosValidados.genero, dadosValidados.paginas, dadosValidados.autor_id]
+        );
+
+        res.status(201).json({ id: result.lastID, ...dadosValidados });
+    } catch (erro) {
+        if (erro instanceof z.ZodError) return res.status(400).json({ erro: 'Validação falhou', detalhes: erro.errors });
+        res.status(500).json({ erro: 'Erro interno no servidor' });
+    }
+});
+
+/**
+ * Rota PUT
+*/
+
+app.put('/api/livros/:id', verificarToken, async (req, res) => {
+    try {
+        const dadosValidados = livroSchema.parse(req.body);
+        const { id } = req.params;
+
+        const livro = await db.get('SELECT id FROM livros WHERE id = ?', [id]);
+        if (!livro) return res.status(404).json({ erro: 'Livro não encontrado' });
+
+        await db.run(
+            'UPDATE livros SET nome = ?, preco = ?, genero = ?, paginas = ?, autor_id = ? WHERE id = ?',
+            [dadosValidados.nome, dadosValidados.preco, dadosValidados.genero, dadosValidados.paginas, dadosValidados.autor_id, id]
+        );
+
+        res.json({ mensagem: 'Livro atualizado com sucesso!' });
+    } catch (erro) {
+        if (erro instanceof z.ZodError) return res.status(400).json({ erro: 'Validação falhou', detalhes: erro.errors });
+        res.status(500).json({ erro: 'Erro interno' });
+    }
+});
+
+/**
+ * Rota DELETE
+*/
+
+app.delete('/api/livros/:id', verificarToken, async (req, res) => {
+    const { id } = req.params;
+    const result = await db.run('DELETE FROM livros WHERE id = ?', [id]);
+
+    if (result.changes === 0) return res.status(404).json({ erro: 'Livro não encontrado' });
+    res.json({ mensagem: 'Livro removido com sucesso!' });
 });
 
 const PORT = 3000;
