@@ -75,6 +75,54 @@ async function configurarBanco() {
     }
 }
 
+/**
+ * Endpoint GET que lista os livros (Paginação, filtros e JOIN)
+*/
+
+app.get('/api/livros', async (req, res) => {
+    try {
+        const { genero, ordem = 'nome', direcao = 'asc', pagina = 1, limite = 10 } = req.query;
+        
+        const limit = parseInt(limite);
+        const offset = (parseInt(pagina) - 1) * limit;
+
+        let sql = `
+            SELECT livros.*, autores.nome as autor_nome 
+            FROM livros 
+            JOIN autores ON livros.autor_id = autores.id 
+            WHERE 1=1
+        `;
+        const params = [];
+
+        if (genero) {
+            sql += ` AND livros.genero = ?`;
+            params.push(genero);
+        }
+
+        const direcaoSql = direcao.toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
+        const camposValidos = ['nome', 'preco'];
+        const campoOrdem = camposValidos.includes(ordem) ? `livros.${ordem}` : 'livros.nome';
+        
+        sql += ` ORDER BY ${campoOrdem} ${direcaoSql} LIMIT ? OFFSET ?`;
+        params.push(limit, offset);
+
+        const resultados = await db.all(sql, params);
+        const total = await db.get(`SELECT COUNT(*) as count FROM livros`);
+
+        res.json({
+            dados: resultados,
+            paginacao: {
+                pagina_atual: parseInt(pagina),
+                itens_por_pagina: limit,
+                total_itens: total.count,
+                total_paginas: Math.ceil(total.count / limit)
+            }
+        });
+    } catch (erro) {
+        res.status(500).json({ erro: 'Erro interno no servidor' });
+    }
+});
+
 const PORT = 3000;
 app.listen(PORT, async () => {
     await configurarBanco();
